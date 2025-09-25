@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic"; // disable static caching
 let cache = {};
 const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
 
-export async function GET(request, { params }) {
-  const { code } = params;
+export async function GET(request, context) {
+  const { code } = await context.params;
   const now = Date.now();
 
   // Check cache
@@ -31,6 +31,24 @@ export async function GET(request, { params }) {
     // Extract metadata & NAV history
     const { meta, data } = schemeData;
 
+    // Normalize date from dd-MM-yyyy to yyyy-MM-dd for reliable parsing
+    const toISO = (d) => {
+      // Expecting formats like '02-12-2024' or '2024-12-02'
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d; // already ISO
+      const parts = d.split("-");
+      if (parts.length === 3) {
+        const [dd, mm, yyyy] = parts;
+        if (yyyy && mm && dd && yyyy.length === 4) {
+          // already yyyy-mm-dd but with different delimiter order
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        // assume dd-mm-yyyy
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      // fallback
+      return d;
+    };
+
     const responseData = {
       metadata: {
         schemeName: meta.scheme_name,
@@ -41,7 +59,7 @@ export async function GET(request, { params }) {
         isinDividend: meta.isin_div_reinvestment,
       },
       navHistory: data.map((item) => ({
-        date: item.date,
+        date: toISO(item.date),
         nav: parseFloat(item.nav),
       })),
     };
@@ -62,3 +80,4 @@ export async function GET(request, { params }) {
     );
   }
 }
+

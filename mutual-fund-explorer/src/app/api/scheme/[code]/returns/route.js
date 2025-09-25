@@ -10,12 +10,19 @@ async function fetchSchemeNav(code) {
   return data.navHistory;
 }
 
-function findNavOnOrAfter(navHistory, targetDate) {
-  return navHistory.find((item) => new Date(item.date) >= targetDate);
+// Find the latest NAV on or BEFORE the target date
+function findNavOnOrBefore(sortedAsc, targetDate) {
+  let chosen = null;
+  for (let i = 0; i < sortedAsc.length; i++) {
+    const d = new Date(sortedAsc[i].date);
+    if (d <= targetDate && sortedAsc[i].nav > 0) chosen = sortedAsc[i];
+    if (d > targetDate) break;
+  }
+  return chosen;
 }
 
-export async function GET(request, { params }) {
-  const { code } = params;
+export async function GET(request, context) {
+  const { code } = await context.params;
   const url = new URL(request.url);
   const period = url.searchParams.get("period");
   const from = url.searchParams.get("from");
@@ -59,11 +66,11 @@ export async function GET(request, { params }) {
       startDate = subMonths(new Date(latestNav.date), 1);
     }
 
-    const startNavEntry = findNavOnOrAfter(navHistory, startDate);
-    const endNavEntry = findNavOnOrAfter(navHistory, endDate) || latestNav;
+    const startNavEntry = findNavOnOrBefore(navHistory, startDate);
+    const endNavEntry = findNavOnOrBefore(navHistory, endDate) || latestNav;
 
     if (!startNavEntry || !endNavEntry)
-      return new Response("NAV range not found", { status: 404 });
+      return new Response(JSON.stringify({ needsReview: true, reason: "NAV range not found" }), { status: 422, headers: { "Content-Type": "application/json" } });
 
     const simpleReturn =
       ((endNavEntry.nav / startNavEntry.nav - 1) * 100).toFixed(2);
@@ -73,10 +80,14 @@ export async function GET(request, { params }) {
       new Date(startNavEntry.date)
     );
 
-    const annualizedReturn =
-      days >= 30
-        ? ((Math.pow(endNavEntry.nav / startNavEntry.nav, 365 / days) - 1) * 100).toFixed(2)
-        : null;
+    if (days < 1) {
+      return new Response(
+        JSON.stringify({ needsReview: true, reason: "Insufficient date span" }),
+        { status: 422, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const annualizedReturn = ((Math.pow(endNavEntry.nav / startNavEntry.nav, 365 / days) - 1) * 100).toFixed(2);
 
     const response = {
       startDate: startNavEntry.date,
@@ -84,7 +95,7 @@ export async function GET(request, { params }) {
       startNAV: startNavEntry.nav,
       endNAV: endNavEntry.nav,
       simpleReturn: parseFloat(simpleReturn),
-      annualizedReturn: annualizedReturn ? parseFloat(annualizedReturn) : null,
+      annualizedReturn: parseFloat(annualizedReturn),
     };
 
     return new Response(JSON.stringify(response), {
