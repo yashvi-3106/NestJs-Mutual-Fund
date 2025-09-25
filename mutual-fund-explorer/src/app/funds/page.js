@@ -1,19 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Grid,
   Card,
   CardContent,
   Typography,
   TextField,
-  CircularProgress,
   Pagination,
+  Stack,
+  InputAdornment,
+  Chip,
+  Box,
+  Button,
+  CardActionArea,
+  Menu,
+  Avatar,
 } from "@mui/material";
+import Link from "next/link";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import { useTheme } from "@mui/material/styles";
+import BrandedLoader from "@/components/BrandedLoader";
+import { ThemeControllerContext } from "@/components/ThemeProviderClient";
 
 const PAGE_SIZE = 30;
 
 export default function FundsPage() {
+  const theme = useTheme();
+  const { primaryColor, setPrimaryColor } = React.useContext(ThemeControllerContext);
+  const [colorAnchor, setColorAnchor] = useState(null);
+  const colorOpen = Boolean(colorAnchor);
+  const handleOpenColor = (e) => setColorAnchor(e.currentTarget);
+  const handleCloseColor = () => setColorAnchor(null);
   const [schemes, setSchemes] = useState([]);
   const [metadataMap, setMetadataMap] = useState({});
   const [search, setSearch] = useState("");
@@ -79,48 +98,98 @@ export default function FundsPage() {
     setPage(value);
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) return <BrandedLoader label="Fetching funds and metadata..." />;
 
   return (
-    <div style={{ padding: 20 }}>
-      <TextField
-        label="Search Schemes"
-        variant="outlined"
-        fullWidth
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: 20 }}
-      />
+    <Box sx={{ px: { xs: 2, md: 3 }, py: 3 }}>
+      <Stack spacing={2} direction={{ xs: "column", md: "row" }} alignItems={{ xs: "stretch", md: "center" }} justifyContent="space-between" sx={{ mb: 2 }}>
+        <Typography variant="h5" fontWeight={800}>Explore Funds</Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ xs: "stretch", md: "center" }}>
+          <TextField
+            label="Search schemes"
+            variant="outlined"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{ startAdornment: (
+              <InputAdornment position="start">
+                <SearchRoundedIcon />
+              </InputAdornment>
+            )}}
+            sx={{ minWidth: { xs: "100%", md: 360 } }}
+          />
+          <Button variant="outlined" onClick={handleOpenColor} startIcon={<AutoAwesomeRoundedIcon />} sx={{
+            minWidth: 220,
+            justifyContent: "flex-start",
+          }}>
+            Theme color
+            <Box sx={{ ml: 1, width: 18, height: 18, borderRadius: "50%", bgcolor: primaryColor, border: "1px solid", borderColor: theme.palette.divider }} />
+          </Button>
+          <Menu anchorEl={colorAnchor} open={colorOpen} onClose={handleCloseColor} keepMounted>
+            <Box sx={{ px: 2, py: 1.5 }}>
+              <Typography variant="caption" color="text.secondary">Pick any color</Typography>
+              <Box sx={{ mt: 1 }}>
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => { setPrimaryColor(e.target.value); }}
+                  style={{ width: 180, height: 36, border: "none", background: "transparent", cursor: "pointer" }}
+                />
+              </Box>
+            </Box>
+          </Menu>
+        </Stack>
+      </Stack>
 
       <Grid container spacing={2}>
         {filteredSchemes.map((scheme) => {
           const meta = metadataMap[scheme.schemeCode];
           return (
             <Grid item xs={12} sm={6} md={4} key={scheme.schemeCode}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">{scheme.schemeName}</Typography>
-                  <Typography variant="body2">
-                    Fund House: {meta?.fundHouse || "N/A"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Type: {meta?.schemeType || "N/A"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Category: {meta?.schemeCategory || "N/A"}
-                  </Typography>
-                  <Typography variant="body2">
-                    Code: {scheme.schemeCode}
-                  </Typography>
-                </CardContent>
+              <Card
+                variant="outlined"
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
+                  borderTop: `3px solid ${theme.palette.primary.main}`,
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: 4,
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <CardActionArea component={Link} href={`/scheme/${scheme.schemeCode}`} sx={{ height: "100%", alignItems: "stretch", display: "flex", flexDirection: "column" }}>
+                  <CardContent sx={{ width: "100%" }}>
+                    <Stack spacing={1.5}>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                          <AutoAwesomeRoundedIcon fontSize="small" />
+                        </Avatar>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {scheme.schemeName}
+                        </Typography>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Chip size="small" label={`#${scheme.schemeCode}`} variant="outlined" />
+                      </Stack>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        <Chip size="small" label={meta?.fundHouse || "Unknown house"} color="primary" variant="outlined" />
+                        <Chip size="small" label={meta?.schemeType || "N/A"} variant="outlined" />
+                        <Chip size="small" label={meta?.schemeCategory || "N/A"} variant="outlined" />
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </CardActionArea>
               </Card>
             </Grid>
           );
         })}
       </Grid>
 
-      <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
+      <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
         <Pagination
+          color="primary"
           count={Math.ceil(
             schemes.filter((scheme) =>
               scheme.schemeName.toLowerCase().includes(search.toLowerCase())
@@ -129,7 +198,7 @@ export default function FundsPage() {
           page={page}
           onChange={handlePageChange}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

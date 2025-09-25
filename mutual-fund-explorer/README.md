@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## Mutual Fund Explorer
 
-## Getting Started
+A Next.js app to explore Indian mutual funds: search schemes, view metadata, analyze NAV and returns, and run SIP/Lumpsum/SWP simulations. It includes a theme system with color and mode switching, and a Fund Comparison Tool.
 
-First, run the development server:
+### Tech
+- Next.js 15 (App Router) with Turbopack
+- MUI v7 (with Emotion)
+- Charting: `@mui/x-charts`
+- APIs: Next.js route handlers under `src/app/api`
 
+---
+
+## Setup & Running
+
+1) Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Run dev server
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+3) Open `http://localhost:3000`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Environment: no special env vars required for local.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Theming & UX
+- Theme color picker (NavBar menu and on Home/Funds pages)
+- Light/Dark mode toggle
+- Consistent, modern MUI styling (rounded cards, gradients, soft borders)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Navigation
+- Home, Funds, Scheme Detail, Compare (Fund Comparison Tool)
 
-## Deploy on Vercel
+### Funds
+- Search with autocomplete-like filtering
+- Professional cards (avatar, title, metadata chips), responsive 1/2/3 per row
+- Smooth hover and quick link to scheme page
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Scheme Detail
+- Overview tab with NAV (last year), area fill, optional Moving Average (configurable window)
+- Returns tab with pre-computed table
+- SIP Calculator tab
+- Lumpsum Calculator tab
+- SWP (Systematic Withdrawal Plan) tab
+- Strategies Compare tab: overlays SIP vs Lumpsum vs SWP
+- Branded loader while data loads
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Fund Comparison Tool (`/compare`)
+- Select multiple schemes to compare
+- NAV trend overlay (last year)
+- Metadata table (fund house, type, category)
+- Risk vs Return scatter (volatility vs average return)
+
+---
+
+## Screenshots
+
+Place the images below in `public/screenshots/`. If your filenames differ, either rename them or update the paths here.
+
+### Home
+<img src="public/screenshots/home.png" alt="Home" width="900" />
+
+### Funds
+<img src="public/screenshots/funds.png" alt="Funds" width="900" />
+
+### Global Loader
+<img src="public/screenshots/loader.png" alt="Loader" width="900" />
+
+### Compare
+<img src="public/screenshots/compare.png" alt="Compare" width="900" />
+
+### Scheme – Overview
+<img src="public/screenshots/scheme-overview.png" alt="Scheme Overview" width="900" />
+
+### Scheme – Returns
+<img src="public/screenshots/scheme-returns.png" alt="Scheme Returns" width="900" />
+
+### Scheme – Lumpsum
+<img src="public/screenshots/scheme-lumpsum.png" alt="Scheme Lumpsum" width="900" />
+
+### Scheme – SIP
+<img src="public/screenshots/scheme-sip.png" alt="Scheme SIP" width="900" />
+
+### Scheme – SWP
+<img src="public/screenshots/scheme-swp.png" alt="Scheme SWP" width="900" />
+
+### Scheme – Strategies Compare
+<img src="public/screenshots/scheme-strategies.png" alt="Strategies Compare" width="900" />
+
+---
+
+## Project Structure
+```
+src/
+  app/
+    page.js                # Home
+    funds/page.js          # Funds list
+    scheme/[code]/page.js  # Scheme detail tabs
+    compare/page.js        # Fund comparison tool
+    api/...                # Data endpoints
+  components/
+    NavBar.js
+    ThemeProviderClient.js
+    NavColorControl.js
+    BrandedLoader.js
+```
+
+---
+
+## Notes
+- Theme preferences are persisted in localStorage (`mf-primary`, `mf-mode`).
+- Data is fetched from internal API routes.
+- Risk metric in Compare is a simple daily NAV return volatility over recent points; refine as needed.
+
+---
+
+## Deploy
+Follow Next.js deployment guides or Vercel. After deploy, ensure APIs are accessible and screenshots paths are updated.
